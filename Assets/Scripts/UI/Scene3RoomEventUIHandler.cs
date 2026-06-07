@@ -182,7 +182,6 @@ namespace UI
 
                 RoomEventChoiceData choice = eventData.choices[i];
                 SetText(slot.labelText, choice.label);
-                RefreshChoiceImage(slot);
 
                 if (slot.judgeRoot != null)
                 {
@@ -427,7 +426,6 @@ namespace UI
                     continue;
 
                 SetText(slot.labelText, phase2Director != null && phase2Director.CurrentRoute == Phase2Route.PatientLetter ? "说服院长" : "对抗院长");
-                RefreshChoiceImage(slot);
 
                 if (slot.judgeRoot != null)
                 {
@@ -641,25 +639,6 @@ namespace UI
             eventImage.sprite = sprite;
             eventImage.enabled = sprite != null;
             eventImage.preserveAspect = true;
-        }
-
-        private void RefreshChoiceImage(ChoiceSlot slot)
-        {
-            if (slot == null)
-                return;
-
-            BindChoiceSlotReferences(slot);
-
-            if (slot.choiceImage == null)
-                return;
-
-            Sprite sprite = activeRoom != null && activeRoom.data != null ? activeRoom.data.sprite : null;
-            if (sprite != null)
-            {
-                slot.choiceImage.sprite = sprite;
-                slot.choiceImage.enabled = true;
-                slot.choiceImage.preserveAspect = true;
-            }
         }
 
         private void RefreshJudgeVisuals(ChoiceSlot slot, RoomEventCheckData check, bool isVisible)
