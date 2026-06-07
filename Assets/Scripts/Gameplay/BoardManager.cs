@@ -21,11 +21,13 @@ namespace Gameplay
         public Vector2Int bossRoomPosition = new Vector2Int(4, 4);
         public int omenWeightBonusPerNonOmenRoom = 1;
         public int maxOmenWeightBonus = 8;
+        public int minimumRoomsBeforeOmen = 3;
 
         private readonly Dictionary<Vector2Int, RoomCard> placedRooms = new();
         private readonly Dictionary<Vector2Int, RoomCard> previewRooms = new();
         private readonly List<RoomCardData> initialDeck = new();
         private readonly List<RoomCardData> candidateRooms = new();
+        private readonly List<RoomPlacementOption> pendingRoomOptions = new();
         private readonly RoomPlacementOption[] reusableOptions = new RoomPlacementOption[3];
         private int currentOmenWeightBonus;
         private readonly Vector2Int[] directions =
@@ -95,17 +97,14 @@ namespace Gameplay
             RoomCard originRoom = GetRoom(origin);
             Vector2Int nextPosition = origin + direction;
 
-            if (!deck.Remove(option.data))
-            {
-                Debug.LogWarning($"Cannot place room: selected card {option.data.name} is no longer in deck.", this);
-                return false;
-            }
+            deck.Remove(option.data);
 
             placedRoom = PlaceRoom(option.data, nextPosition, option.doorLayout);
             if (placedRoom != null)
             {
                 AudioManager.PlaySfx(SfxEnum.PlaceRoom);
                 UpdateOmenWeightAfterPlacement(option.data);
+                ClearPendingRoomOptions();
                 placedRoom.remainingDoors = Mathf.Max(0, placedRoom.remainingDoors - 1);
                 originRoom.remainingDoors = Mathf.Max(0, originRoom.remainingDoors - 1);
                 RefreshReachablePreviews();
@@ -125,9 +124,9 @@ namespace Gameplay
                 return false;
             }
 
-            if (!deck.Contains(option.data))
+            if (!ContainsPendingOption(option.data))
             {
-                failureReason = "选择的房间已经不在随机池中。";
+                failureReason = "选择的房间已经不在当前候选组中。";
                 return false;
             }
 
@@ -163,39 +162,63 @@ namespace Gameplay
                 results.Clear();
             }
 
+            if (pendingRoomOptions.Count == 0)
+            {
+                GeneratePendingRoomOptions(count, origin, direction);
+            }
+
+            int optionCount = Mathf.Min(pendingRoomOptions.Count, count, reusableOptions.Length);
+            for (int i = 0; i < optionCount; i++)
+            {
+                reusableOptions[i] = pendingRoomOptions[i];
+                if (results != null)
+                {
+                    results.Add(reusableOptions[i]);
+                }
+            }
+
+            return optionCount;
+        }
+
+        private void GeneratePendingRoomOptions(int count, Vector2Int origin, Vector2Int direction)
+        {
+            pendingRoomOptions.Clear();
+
+            if (deck.Count < Mathf.Max(1, roomChoiceCount))
+            {
+                ResetDeck();
+            }
+
             if (deck.Count == 0)
             {
                 ResetDeck();
             }
 
             if (deck.Count == 0 || count <= 0 || !CanPlaceFromOrigin(origin, direction, out _))
-                return 0;
+                return;
 
             FillCandidates();
             if (candidateRooms.Count == 0)
-                return 0;
+            {
+                ResetDeck();
+                FillCandidates();
+            }
+
+            if (candidateRooms.Count == 0)
+                return;
 
             count = Mathf.Clamp(count, 1, reusableOptions.Length);
             int attempts = candidateRooms.Count * 3;
-            int optionCount = 0;
 
-            while (optionCount < count && attempts > 0)
+            while (pendingRoomOptions.Count < count && attempts > 0)
             {
                 attempts--;
                 RoomCardData card = candidateRooms[Random.Range(0, candidateRooms.Count)];
-                if (card == null || ContainsOption(card, optionCount))
+                if (card == null || ContainsPendingOption(card))
                     continue;
 
-                reusableOptions[optionCount] = CreatePlacementOption(card, direction);
-                if (results != null)
-                {
-                    results.Add(reusableOptions[optionCount]);
-                }
-
-                optionCount++;
+                pendingRoomOptions.Add(CreatePlacementOption(card, direction));
             }
-
-            return optionCount;
         }
 
         public bool TryPlaceFixedRoom(RoomCardData card, Vector2Int gridPosition, out RoomCard placedRoom)
@@ -367,7 +390,7 @@ namespace Gameplay
             for (int i = 0; i < deck.Count; i++)
             {
                 RoomCardData card = deck[i];
-                if (card == null || card.doorCount <= 0)
+                if (card == null || card.doorCount <= 0 || ShouldExcludeFromCandidates(card))
                     continue;
 
                 int copies = IsOmenRoom(card) ? 1 + currentOmenWeightBonus : 1;
@@ -376,6 +399,16 @@ namespace Gameplay
                     candidateRooms.Add(card);
                 }
             }
+        }
+
+        private bool ShouldExcludeFromCandidates(RoomCardData card)
+        {
+            return IsOmenRoom(card) && GetGeneratedRoomCount() < Mathf.Max(0, minimumRoomsBeforeOmen);
+        }
+
+        private int GetGeneratedRoomCount()
+        {
+            return Mathf.Max(0, placedRooms.Count - 1);
         }
 
         private void CacheInitialDeck()
@@ -511,15 +544,20 @@ namespace Gameplay
             return layout;
         }
 
-        private bool ContainsOption(RoomCardData card, int optionCount)
+        private bool ContainsPendingOption(RoomCardData card)
         {
-            for (int i = 0; i < optionCount; i++)
+            for (int i = 0; i < pendingRoomOptions.Count; i++)
             {
-                if (reusableOptions[i] != null && reusableOptions[i].data == card)
+                if (pendingRoomOptions[i] != null && pendingRoomOptions[i].data == card)
                     return true;
             }
 
             return false;
+        }
+
+        private void ClearPendingRoomOptions()
+        {
+            pendingRoomOptions.Clear();
         }
 
         private void ClearPreviewRooms()

@@ -46,6 +46,7 @@ namespace Gameplay
         public Phase2State State => state;
         public Phase2Route CurrentRoute => currentRoute;
         public int CurrentPatience => currentPatience;
+        public int MaxPatience => GetInitialPatience(currentRoute);
         public int DifficultyBonus => difficultyBonus;
         public int SuccessfulDeanChecks => successfulDeanChecks;
         public RoomCard DeanOfficeRoom => deanOfficeRoom;

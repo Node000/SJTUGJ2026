@@ -9,6 +9,7 @@ namespace Gameplay
         Exploring,
         ResolvingRoomEvent,
         TruthRevealed,
+        Phase2,
         GameOver
     }
 
@@ -41,7 +42,7 @@ namespace Gameplay
         public RoomCard CurrentRoom => currentRoom;
         public RoomEventData CurrentEventData => currentEventData;
         public bool? GameResult => gameResult;
-        public bool CanPlayerAct => phase == InGamePhase.Exploring || phase == InGamePhase.TruthRevealed;
+        public bool CanPlayerAct => phase == InGamePhase.Exploring || phase == InGamePhase.TruthRevealed || phase == InGamePhase.Phase2;
 
         public event Action<InGamePhase> OnPhaseChanged;
         public event Action<int> OnTurnCountChanged;
@@ -66,11 +67,13 @@ namespace Gameplay
         {
             ResolveReferences();
             SubscribePlayerState();
+            SubscribePhase2();
         }
 
         private void OnDestroy()
         {
             UnsubscribePlayerState();
+            UnsubscribePhase2();
 
             if (Instance == this)
             {
@@ -159,7 +162,9 @@ namespace Gameplay
 
             if (phase != InGamePhase.GameOver)
             {
-                SetPhase(truthRevealed ? InGamePhase.TruthRevealed : InGamePhase.Exploring);
+                SetPhase(phase2Director != null && phase2Director.IsActive
+                    ? InGamePhase.Phase2
+                    : truthRevealed ? InGamePhase.TruthRevealed : InGamePhase.Exploring);
             }
         }
 
@@ -222,6 +227,28 @@ namespace Gameplay
             {
                 playerStateManager.OnDied -= HandlePlayerDied;
             }
+        }
+
+        private void SubscribePhase2()
+        {
+            if (phase2Director != null)
+            {
+                phase2Director.OnPhase2Started += HandlePhase2Started;
+            }
+        }
+
+        private void UnsubscribePhase2()
+        {
+            if (phase2Director != null)
+            {
+                phase2Director.OnPhase2Started -= HandlePhase2Started;
+            }
+        }
+
+        private void HandlePhase2Started(Phase2Route route)
+        {
+            AudioManager.PlayBgm(BgmEnum.Phase2);
+            SetPhase(InGamePhase.Phase2);
         }
 
         private void HandlePlayerDied()
