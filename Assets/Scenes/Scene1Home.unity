@@ -1298,7 +1298,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &677313886
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2216,7 +2216,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 12fd6c70fac072845acd78f0bde9f751, type: 3}
+  m_Sprite: {fileID: 21300000, guid: b2de9c5ee562d4d15b09051ec8a345d0, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2520,6 +2520,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1834529335}
   - component: {fileID: 1834529336}
+  - component: {fileID: 1834529337}
   m_Layer: 5
   m_Name: buttonGroup
   m_TagString: Untagged
@@ -2573,6 +2574,29 @@ MonoBehaviour:
   m_Spacing: {x: 10, y: 10}
   m_Constraint: 0
   m_ConstraintCount: 2
+--- !u!114 &1834529337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1834529334}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d984eb3331e244a4bc554efd90b53063, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  character: {fileID: 532629172}
+  buttonTargets:
+  - {fileID: 261366898}
+  - {fileID: 486370616}
+  - {fileID: 813871740}
+  startIndex: 0
+  jumpDuration: 0.22
+  jumpHeight: 55
+  audioSettingsPanel: {fileID: 1961592233}
+  audioSettingsTargetIndex: 2
+  hideAudioSettingsOnStart: 1
 --- !u!1 &1838856170
 GameObject:
   m_ObjectHideFlags: 0

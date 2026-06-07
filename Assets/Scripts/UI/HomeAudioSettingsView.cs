@@ -10,7 +10,7 @@ namespace UI
         public Slider sfxVolumeSlider;
         public BgmEnum startupBgm = BgmEnum.Phase1;
 
-        private void Start()
+        private void Awake()
         {
             AudioManager manager = AudioManager.Instance;
             if (manager == null)
